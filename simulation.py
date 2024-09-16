@@ -17,6 +17,11 @@ class Simulation:
         self.organisms = []
         self.world = []
 
+        self.epoch = 0
+        self.time = 0
+
+        self.mutation_prob = 0.05
+
         self.initialize()
 
     def initialize(self):
@@ -57,9 +62,9 @@ class Simulation:
             for i in range(x-1, x+2):
                 for j in range(y-1, y+2):
                     if (i < 0 or i >= self.width):
-                        input.append(0)
+                        input.append(1)
                     elif (j < 0 or j >= self.height):
-                        input.append(0)
+                        input.append(1)
                     elif (self.world[i][j] >= 0):
                         input.append(1)
                     else:
@@ -72,13 +77,7 @@ class Simulation:
             prev_x = x
             prev_y = y
 
-            try:
-                self.world[prev_x][prev_y] = -1
-            except:
-                print(prev_x)
-                print(prev_y)
-                print(id)
-                return
+            self.world[prev_x][prev_y] = -1
 
             x += coords[0]
             y += coords[1]
@@ -91,15 +90,102 @@ class Simulation:
                     self.world[prev_x][prev_y] = id
                     organism.set_coords(prev_x, prev_y)
             else:
-                try:
-                    self.world[prev_x][prev_y] = id
-                    organism.set_coords(prev_x, prev_y)
-                except:
-                    print(prev_x)
-                    print(prev_y)
-                    print(id)
-                    return
+                self.world[prev_x][prev_y] = id
+                organism.set_coords(prev_x, prev_y)
+        
+        self.time += 1
     
+    def evolve(self):
+        survived = []
+
+        for organism in self.organisms:
+            org_survive = self.natural_selection(organism)
+            if (org_survive):
+                survived.append(organism.get_id())
+        
+        survival_rate = 1.0 * len(survived) / self.num_organisms
+        print(f"epoch {self.epoch}: survival rate " + "{:.3f}".format(survival_rate))
+        
+        gene_pool = [self.organisms[id].get_weights() for id in survived]
+
+        for id in self.ids:
+            organism = self.organisms[id]
+            weights = self.mutate(gene_pool[random.randint(0, len(gene_pool)-1)])
+
+            organism.set_weights(weights)
+        
+        self.set_coords()
+        self.epoch += 1
+        self.time = 0
+        
+    def natural_selection(self, organism, mode=0):
+        """
+        returns true if the organism survives and false otherwise
+        """
+        if (mode == 0):
+            x = organism.get_x()
+            y = organism.get_y()
+
+            if (x < self.width // 2):
+                return True
+            else:
+                return False
+        elif (mode == 1):
+            x = organism.get_x()
+            y = organism.get_y()
+            count = 0
+
+            for i in range(x-1, x+2):
+                for j in range(y-1, y+2):
+                    if (i < 0 or i >= self.width):
+                        continue
+                    elif (j < 0 or j >= self.height):
+                        continue
+                    elif (self.world[i][j] >= 0):
+                        count += 1
+                    else:
+                        continue
+            
+            if (count > 1):
+                return False
+            else:
+                return True
+        elif (mode == 2):
+            x = organism.get_x()
+            y = organism.get_y()
+            count = 0
+
+            for i in range(x-1, x+2):
+                for j in range(y-1, y+2):
+                    if (i < 0 or i >= self.width):
+                        continue
+                    elif (j < 0 or j >= self.height):
+                        continue
+                    elif (self.world[i][j] >= 0):
+                        count += 1
+                    else:
+                        continue
+            
+            if (count < 6):
+                return False
+            else:
+                return True
+        else:
+            return True
+    
+    def mutate(self, weights):
+        if (random.random() < self.mutation_prob):
+            if (random.random() < 0.5):
+                dim = weights[0].shape
+                mut = random.randint(0, dim[0]*dim[1]-1)
+                weights[0][mut % dim[0]][mut // dim[0]] *= -1.0
+            else:
+                dim = weights[1].shape
+                mut = random.randint(0, dim[0]*dim[1]-1)
+                weights[1][mut % dim[0]][mut // dim[0]] *= -1.0
+        
+        return weights
+
     def get_world(self):
         return self.world
 
