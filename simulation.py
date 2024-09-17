@@ -20,7 +20,7 @@ class Simulation:
         self.epoch = 0
         self.time = 0
 
-        self.mutation_prob = 0.05
+        self.mutation_prob = 0.01
 
         self.initialize()
 

@@ -19,8 +19,6 @@ def main():
     sim = Simulation(width=world_size, height=world_size, num_organisms=num_orgs)
     
     while True:
-        # print(f"epoch: {sim.epoch}")
-
         if (sim.epoch % 5 == 0):
             fig, ax = plt.subplots()
             img = ax.matshow(np.asarray(sim.get_world()))
